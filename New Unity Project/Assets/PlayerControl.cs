@@ -8,16 +8,16 @@ public class PlayerControl : MonoBehaviour
     public float growScale;
     public float moveHorizontal;
     public float moveVertical;
-    public GameObject blob;
-    public GameObject rock;
 
+    public float blobCooldown = 2.0f;
+    public float cooldownTimer = 0.0f;
 
-    private Rigidbody2D rb2d;
+    public Transform blobPrefab;
+    Transform activeBlob;
 
     // Start is called before the first frame update
     void Start()
     {
-        rb2d = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
@@ -31,47 +31,55 @@ public class PlayerControl : MonoBehaviour
 
         transform.Translate(movement * pSpeed * Time.deltaTime);
 
-        //if (Input.GetKey(KeyCode.Space)) { DropBlob(); }
-        if (Input.GetMouseButton(0))
+        if(cooldownTimer > 0.0f)
         {
-            if (!blob.activeSelf)
-            {
-                
-
-                Vector3 mousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10f);
-
-                blob.transform.localScale = Vector3.one;
-                blob.transform.position = Camera.main.ScreenToWorldPoint(mousePos); ;
-                blob.SetActive(true);
-            }
-            if (blob.transform.localScale.x < 5) { blob.transform.localScale += blob.transform.localScale * growScale * Time.deltaTime; }
+            cooldownTimer -= Time.deltaTime;
         }
+        else
+        {
+            cooldownTimer = 0.0f;
+        }
+
+        // place blob with mouseDown
+        if (Input.GetMouseButtonDown(0) && cooldownTimer == 0.0f)
+        {
+            Vector3 mousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10f);
+
+            activeBlob = Instantiate(blobPrefab, Camera.main.ScreenToWorldPoint(mousePos), Quaternion.identity);
+            activeBlob.GetComponent<BlobHaviour>().owner = this;
+        }
+        // release mouse to deactivate blob
         if (Input.GetMouseButtonUp(0))
         {
-            if (blob.activeSelf)
+            if (activeBlob)
             {
-                Instantiate(rock, blob.transform.position, blob.transform.rotation);
-                rock.transform.localScale = blob.transform.localScale;
-                blob.SetActive(false);
+                cooldownTimer = blobCooldown;
+                activeBlob.GetComponent<BlobHaviour>().DeActivate();
+                activeBlob = null;
             }
         }
     }
 
-
-    void DropBlob()
+    public void Kill(PlayerControl killer)
     {
-        if (!blob.activeSelf) 
+        // who killed this player?
+        if (killer == this)
         {
-            blob.transform.localScale = Vector3.one;
-            blob.transform.position = transform.position;
-            blob.SetActive(true); 
+            Debug.Log(name + " killed themselves!");
         }
-        
-    }
+        else
+        {
+            string killerName = killer.name;
+            Debug.Log(name + " killed by " + killerName + "!");
+        }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        Debug.Log("Hit");
+        // commence End of Game
+        if (activeBlob)
+        {
+            activeBlob.GetComponent<BlobHaviour>().DeActivate();
+            activeBlob = null;
+        }
+
     }
 }
 
