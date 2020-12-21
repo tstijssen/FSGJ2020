@@ -27,6 +27,7 @@ public class BlobHaviour : MonoBehaviour
             else
             {
                 DeActivate();
+                //owner.DeactivateBlob();
             }
         }
     }
@@ -35,26 +36,19 @@ public class BlobHaviour : MonoBehaviour
     {
         isActive = false;
         GetComponent<CircleCollider2D>().isTrigger = false;
+        GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
 
         // change texture
+        GetComponent<SpriteRenderer>().color = Color.black;
 
         Debug.Log("Blob set inactive");
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log("Hit");
-        if(isActive)
+        if(isActive && other.TryGetComponent(out PlayerControl otherPlayer))
         {
-            if (other.TryGetComponent(out PlayerControl otherPlayer))
-            {
-                otherPlayer.Kill(owner);
-
-            }
-            //else if(other.TryGetComponent(out AIControl otherAI))
-            //{
-            //    otherAI.Kill(owner);
-            //}
+            otherPlayer.Kill(owner);
         }
     }
 }
